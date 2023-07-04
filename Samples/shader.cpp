@@ -5,6 +5,7 @@
 #include <cassert>
 #include <fstream>
 #include <memory>
+#include <iostream>
 
 // Define Namespace
 namespace Mirage
@@ -22,7 +23,7 @@ namespace Mirage
     Shader & Shader::attach(std::string const & filename)
     {
         // Load GLSL Shader Source from File
-        std::string path = PROJECT_SOURCE_DIR "/Mirage/Shaders/";
+        std::string path = PROJECT_SOURCE_DIR "/Glitter/Shaders/";
         std::ifstream fd(path + filename);
         auto src = std::string(std::istreambuf_iterator<char>(fd),
                               (std::istreambuf_iterator<char>()));
@@ -33,6 +34,8 @@ namespace Mirage
         glShaderSource(shader, 1, & source, nullptr);
         glCompileShader(shader);
         glGetShaderiv(shader, GL_COMPILE_STATUS, & mStatus);
+
+        std::cout<<shader<<std::endl;
 
         // Display the Build Log on Error
         if (mStatus == false)
