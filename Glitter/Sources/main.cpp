@@ -15,11 +15,13 @@
 //Camera header
 #include <Camera.h>
 
+//Model
+#include <Model.h>
+
 #include <vector>
 #include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 //Camera setting
 const std::string program_name = ("Camera");
@@ -67,6 +69,9 @@ int main(int argc, char * argv[]) {
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
+    stbi_set_flip_vertically_on_load(true);
+    glEnable(GL_DEPTH_TEST);
+
     Mirage::Shader shaderProgram;
     // Build and compile shader program
     // Vertex shader
@@ -78,112 +83,7 @@ int main(int argc, char * argv[]) {
     // Link and activate the shader program
     shaderProgram.link().activate();
 
-
-    std::vector<float> vertices;
-    int verticalSubdivisions = 40, horizontalSubdivisions = 40;
-    float radius = 0.6f;
-    float colorIncrement = 0.0f;
-    for(int i=0; i <= verticalSubdivisions; i++){
-        for(int j=0; j <= horizontalSubdivisions; j++){
-            float theta = static_cast<float>(i) / verticalSubdivisions * 3.1415926;
-            float phi = static_cast<float>(j) / horizontalSubdivisions * 2.0f * 3.1415926;
-
-            float x = radius * std::sin(theta) * std::cos(phi);
-            float y = radius * std::cos(theta);
-            float z = radius * std::sin(theta) * std::sin(phi);
-
-
-            vertices.push_back(x);
-            vertices.push_back(y);
-            vertices.push_back(z);
-
-            float u = static_cast<float>(i) / verticalSubdivisions;
-            float v = static_cast<float>(j) / horizontalSubdivisions;
-
-            vertices.push_back(u);
-            vertices.push_back(v);
-        }
-    }
-
-    std::vector<unsigned int> indices;
-
-    for (int i = 0; i < verticalSubdivisions; i++) {
-        for (int j = 0; j < horizontalSubdivisions; j++) {
-            int topLeft = i * (horizontalSubdivisions + 1) + j;
-            int topRight = topLeft + 1;
-            int bottomLeft = (i + 1) * (horizontalSubdivisions + 1) + j;
-            int bottomRight = bottomLeft + 1;
-
-            // Add two triangles for each quad
-            indices.push_back(topLeft);
-            indices.push_back(bottomLeft);
-            indices.push_back(topRight);
-
-            indices.push_back(topRight);
-            indices.push_back(bottomLeft);
-            indices.push_back(bottomRight);
-        }
-    }
-
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-                          static_cast<void *>(nullptr));
-    glEnableVertexAttribArray(0);
-    // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-                          reinterpret_cast<void *>(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // load and create a texture
-    // -------------------------
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-    int width, height, nrChannels;
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load(PROJECT_SOURCE_DIR "/Glitter/Textures/earth.png", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
-
-    // tell opengl for each sampler to which texture unit it belongs to (only has
-    // to be done once)
-    // -------------------------------------------------------------------------------------------
-    shaderProgram.activate(); // don't forget to activate/use the shader before setting
-    // uniforms!
-    // either set it manually like so:
-    glUniform1i(glGetUniformLocation(shaderProgram.get(), "texture"), 0);
-    // or set it via the texture class
-
-    glEnable(GL_DEPTH_TEST);
+    Model ourModel(PROJECT_SOURCE_DIR "/Glitter/Models/Backpack/backpack.obj");
 
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
@@ -199,10 +99,6 @@ int main(int argc, char * argv[]) {
         glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // bind textures on corresponding texture units
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-
         // activate shader
         shaderProgram.activate();
 
@@ -215,16 +111,14 @@ int main(int argc, char * argv[]) {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "view"), 1, GL_FALSE,
                            &view[0][0]);
 
-        // world transformation
+        // render the loaded model
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians((float)glfwGetTime() * 20), glm::vec3(1.0f, 1.0f, 1.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE,
                            &model[0][0]);
+        ourModel.Draw(shaderProgram);
 
-        // render container
-        glBindVertexArray(VAO);
-
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
@@ -233,10 +127,6 @@ int main(int argc, char * argv[]) {
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
-
     glfwTerminate();
     return EXIT_SUCCESS;
 }
