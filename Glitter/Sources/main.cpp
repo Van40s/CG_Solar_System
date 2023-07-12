@@ -30,7 +30,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-static Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+static Camera camera(glm::vec3(0.0f, 0.0f, -30.0f));
 static float lastX = 1200 / 2.0f;
 static float lastY = 800 / 2.0f;
 static bool firstMouse = true;
@@ -69,7 +69,7 @@ int main(int argc, char * argv[]) {
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
-    stbi_set_flip_vertically_on_load(true);
+//    stbi_set_flip_vertically_on_load(true);
     glEnable(GL_DEPTH_TEST);
 
     Mirage::Shader shaderProgram;
@@ -83,7 +83,9 @@ int main(int argc, char * argv[]) {
     // Link and activate the shader program
     shaderProgram.link().activate();
 
-    Model ourModel(PROJECT_SOURCE_DIR "/Glitter/Models/Backpack/backpack.obj");
+    Model ourModel(PROJECT_SOURCE_DIR "/Glitter/Models/Earth/earth.obj");
+    Model venus(PROJECT_SOURCE_DIR "/Glitter/Models/Venus/venus.obj");
+
 
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
@@ -119,6 +121,12 @@ int main(int argc, char * argv[]) {
                            &model[0][0]);
         ourModel.Draw(shaderProgram);
 
+        // Position the Venus
+        model = glm::mat4(1.0f); // Reset the model matrix for Venus
+        model = glm::translate(model, glm::vec3(-25.0f, 0.0f, 0.0f)); // translate to the left of Earth
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
+        venus.Draw(shaderProgram);
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
