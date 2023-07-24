@@ -93,10 +93,45 @@ int main(int argc, char * argv[]) {
     Model Uranus (PROJECT_SOURCE_DIR "/Glitter/Models/Uranus/uranus.obj");
     Model Neptune (PROJECT_SOURCE_DIR "/Glitter/Models/Neptune/neptune.obj");
 
-
-    float distanceFromSun = 120.0f;
-
     float rotationSpeedScale = 0.1f;
+
+    long distanceSunToMercury = 57910000L; // Mercury's distance from the Sun in kilometers
+    long distanceSunToVenus = 108200000L;  // Venus's distance from the Sun in kilometers
+    long distanceSunToEarth = 149600000L;  // Earth's distance from the Sun in kilometers
+    long distanceSunToMars = 227940000L;   // Mars's distance from the Sun in kilometers
+    long distanceSunToJupiter = 778330000L;// Jupiter's distance from the Sun in kilometers
+    long distanceSunToSaturn = 1429400000L; // Saturn's distance from the Sun in kilometers
+    long long distanceSunToUranus = 2870990000L; // Uranus's distance from the Sun in kilometers
+    long long distanceSunToNeptune = 4497100000L;// Neptune's distance from the Sun in kilometers
+
+    float scalingCoef = 0.0000005f;
+    float addedValue = 150.0f;
+
+    float mercuryAngle = 0.0f;
+    float mercuryIncrementAngle = 360.0f/88.0f;
+
+    float venusAngle = 0.0f;
+    float venusIncrementAngle = 360.0f/225.0f;
+
+    float earthAngle = 0.0f;
+    float earthIncrementAngle = 360.0f/365.0f;
+
+    float marsAngle = 0.0f;
+    float marsIncrementAngle = 360.0f/687.0f;
+
+    float jupiterAngle = 0.0f;
+    float jupiterIncrementAngle = 360.0f/4333.0f;
+
+    float saturnAngle = 0.0f;
+    float saturnIncrementAngle = 360.0f/10759.0f;
+
+    float uranusAngle = 0.0f;
+    float uranusIncrementAngle = 360.0f/30688.0f;
+
+    float neptuneAngle = 0.0f;
+    float neptuneIncrementAngle = 360.0f/60190.0f;
+
+    float speedCoefficient  = 0.001f;
 
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
@@ -117,7 +152,7 @@ int main(int argc, char * argv[]) {
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
-                                                (float)1200 / (float)800, 0.1f, 4000.0f);
+                                                (float)1200 / (float)800, 0.1f, 8000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "projection"), 1, GL_FALSE,
                            &projection[0][0]);
@@ -144,67 +179,79 @@ int main(int argc, char * argv[]) {
 
         //Mercury
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 40.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToMercury * scalingCoef) + addedValue) * cos(mercuryAngle), 0.0f, (((float)distanceSunToMercury * scalingCoef) + addedValue) * sin(mercuryAngle)));
         model = glm::rotate(model, mercuryRotationAngle, glm::vec3(0.0f, 0.1f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Mercury.Draw(shaderProgram);
 
+        mercuryAngle += mercuryIncrementAngle * speedCoefficient;
+
         // Venus
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 80.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToVenus * scalingCoef) + addedValue) * cos(venusAngle), 0.0f, (((float)distanceSunToVenus * scalingCoef) + addedValue) * sin(venusAngle)));
         model = glm::rotate(model, venusRotationAngle, glm::vec3(0.0f, -0.1f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         venus.Draw(shaderProgram);
+        venusAngle += venusIncrementAngle * speedCoefficient;
 
         // Earth
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(distanceFromSun + 120.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle), 0.0f, (((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)));
         model = glm::rotate(model, earthRotationAngle, glm::vec3(0.0f, 1.0f, 0.1f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE,&model[0][0]);
         Earth.Draw(shaderProgram);
+        earthAngle+=earthIncrementAngle * speedCoefficient;
 
         //Mars
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 160.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToMars * scalingCoef) + addedValue) * cos(marsAngle), 0.0f, (((float)distanceSunToMars * scalingCoef) + addedValue) * sin(marsAngle)));
         model = glm::rotate(model, marsRotationAngle, glm::vec3(0.0f, 1.0f, 0.05f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Mars.Draw(shaderProgram);
+        marsAngle+=marsIncrementAngle * speedCoefficient;
 
         //Jupiter
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 400.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToJupiter * scalingCoef) + addedValue) * cos(jupiterAngle), 0.0f, (((float)distanceSunToJupiter * scalingCoef) + addedValue) * sin(jupiterAngle)));
         model = glm::rotate(model, jupiterRotationAngle, glm::vec3(0.0f, 1.0f, 0.08f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Jupiter.Draw(shaderProgram);
+        jupiterAngle += jupiterIncrementAngle * speedCoefficient;
 
         //Saturn
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 700.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.15f));
-        model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));       // scale as needed
+        model = glm::translate(model, glm::vec3((((float)distanceSunToSaturn * scalingCoef) + addedValue) * cos(saturnAngle), 0.0f, (((float)distanceSunToSaturn * scalingCoef) + addedValue) * sin(saturnAngle)));
+        model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.00f));
+        model = glm::scale(model, glm::vec3(1.2f, 1.2f, 1.2f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Saturn.Draw(shaderProgram);
+        saturnAngle += saturnIncrementAngle * speedCoefficient;
 
         //Uranus
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 900.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToUranus * scalingCoef) + addedValue) * cos(uranusAngle), 0.0f, (((float)distanceSunToUranus * scalingCoef) + addedValue) * sin(uranusAngle)));
         model = glm::rotate(model, uranusRotationAngle, glm::vec3(0.0f, 0.45f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Uranus.Draw(shaderProgram);
+        uranusAngle += uranusIncrementAngle * speedCoefficient;
 
         //Neptune
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3(distanceFromSun + 1050.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, neptuneRotationAngle, glm::vec3(0.0f, 0.15f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));       // scale as needed
+        model = glm::translate(model, glm::vec3((((float)distanceSunToNeptune * scalingCoef) + addedValue) * cos(neptuneAngle), 0.0f, (((float)distanceSunToNeptune * scalingCoef) + addedValue) * sin(neptuneAngle)));
+        model = glm::rotate(model, neptuneRotationAngle, glm::vec3(0.0f, 1.0f, 0.15f));
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Neptune.Draw(shaderProgram);
+        neptuneAngle += neptuneIncrementAngle * speedCoefficient;
+
+        Sleep(10);
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
