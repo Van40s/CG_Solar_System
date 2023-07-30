@@ -29,6 +29,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+unsigned int loadCubemap(std::vector<std::string> faces);
 
 static Camera camera(glm::vec3(400.0f, 0.0f, -100.0f));
 static float lastX = 1200 / 2.0f;
@@ -83,6 +84,13 @@ int main(int argc, char * argv[]) {
     // Link and activate the shader program
     shaderProgram.link().activate();
 
+
+    Mirage::Shader SkyboxShader;
+
+    SkyboxShader.attach("skybox.vert");
+    SkyboxShader.attach("skybox.frag");
+    SkyboxShader.link().activate();
+
     Model Sun (PROJECT_SOURCE_DIR "/Glitter/Models/sun/sun.obj");
     Model Mercury (PROJECT_SOURCE_DIR "/Glitter/Models/Mercury/mercury.obj");
     Model venus(PROJECT_SOURCE_DIR "/Glitter/Models/Venus/venus.obj");
@@ -93,7 +101,75 @@ int main(int argc, char * argv[]) {
     Model Uranus (PROJECT_SOURCE_DIR "/Glitter/Models/Uranus/uranus.obj");
     Model Neptune (PROJECT_SOURCE_DIR "/Glitter/Models/Neptune/neptune.obj");
 
-    float rotationSpeedScale = 0.1f;
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
+    /* SKYBOX GENERATION */
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    /* SKYBOX GENERATION */
+
+    std::vector<std::string> faces
+    {
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_bk.tga",
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_dn.tga",
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_ft.tga",
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_lf.tga",
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_rt.tga",
+        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_up.tga"
+    };
+
+    unsigned int cubemapTexture = loadCubemap(faces);
+
+    float rotationSpeedScale = 1.0f;
 
     long distanceSunToMercury = 57910000L; // Mercury's distance from the Sun in kilometers
     long distanceSunToVenus = 108200000L;  // Venus's distance from the Sun in kilometers
@@ -132,7 +208,7 @@ int main(int argc, char * argv[]) {
     float neptuneIncrementAngle = 360.0f/60190.0f;
 
     float speedCoefficient  = 0.001f;
-
+    
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
         // per-frame time logic
@@ -142,6 +218,8 @@ int main(int argc, char * argv[]) {
         lastFrame = currentFrame;
 
         processInput(mWindow);
+
+        glm::mat4 view;
 
         // Background Fill Color
         glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -153,7 +231,7 @@ int main(int argc, char * argv[]) {
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
                                                 (float)1200 / (float)800, 0.1f, 8000.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        view = camera.GetViewMatrix();
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "projection"), 1, GL_FALSE,
                            &projection[0][0]);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "view"), 1, GL_FALSE,
@@ -169,11 +247,12 @@ int main(int argc, char * argv[]) {
         float uranusRotationAngle = glm::radians(currentFrame * 196.39f * rotationSpeedScale);
         float neptuneRotationAngle = glm::radians(currentFrame * 242.78f * rotationSpeedScale);
 
-
         // Position the Sun
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.f));
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(23.5f) * 0.25f, glm::vec3(0.0f, 0.0f, 1.f));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Sun.Draw(shaderProgram);
 
@@ -199,7 +278,8 @@ int main(int argc, char * argv[]) {
         // Earth
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle), 0.0f, (((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)));
-        model = glm::rotate(model, earthRotationAngle, glm::vec3(0.0f, 1.0f, 0.1f));
+        model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, earthRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE,&model[0][0]);
         Earth.Draw(shaderProgram);
@@ -208,6 +288,7 @@ int main(int argc, char * argv[]) {
         //Mars
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToMars * scalingCoef) + addedValue) * cos(marsAngle), 0.0f, (((float)distanceSunToMars * scalingCoef) + addedValue) * sin(marsAngle)));
+        model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, marsRotationAngle, glm::vec3(0.0f, 1.0f, 0.05f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
@@ -217,7 +298,7 @@ int main(int argc, char * argv[]) {
         //Jupiter
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToJupiter * scalingCoef) + addedValue) * cos(jupiterAngle), 0.0f, (((float)distanceSunToJupiter * scalingCoef) + addedValue) * sin(jupiterAngle)));
-        model = glm::rotate(model, jupiterRotationAngle, glm::vec3(0.0f, 1.0f, 0.08f));
+        model = glm::rotate(model, jupiterRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Jupiter.Draw(shaderProgram);
@@ -226,8 +307,8 @@ int main(int argc, char * argv[]) {
         //Saturn
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToSaturn * scalingCoef) + addedValue) * cos(saturnAngle), 0.0f, (((float)distanceSunToSaturn * scalingCoef) + addedValue) * sin(saturnAngle)));
-        model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.00f));
+        model = glm::rotate(model, glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.2f, 1.2f, 1.2f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Saturn.Draw(shaderProgram);
@@ -236,7 +317,7 @@ int main(int argc, char * argv[]) {
         //Uranus
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToUranus * scalingCoef) + addedValue) * cos(uranusAngle), 0.0f, (((float)distanceSunToUranus * scalingCoef) + addedValue) * sin(uranusAngle)));
-        model = glm::rotate(model, uranusRotationAngle, glm::vec3(0.0f, 0.45f, 1.0f));
+        model = glm::rotate(model, uranusRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Uranus.Draw(shaderProgram);
@@ -245,13 +326,32 @@ int main(int argc, char * argv[]) {
         //Neptune
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToNeptune * scalingCoef) + addedValue) * cos(neptuneAngle), 0.0f, (((float)distanceSunToNeptune * scalingCoef) + addedValue) * sin(neptuneAngle)));
-        model = glm::rotate(model, neptuneRotationAngle, glm::vec3(0.0f, 1.0f, 0.15f));
+        model = glm::rotate(model, glm::radians(20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, neptuneRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Neptune.Draw(shaderProgram);
         neptuneAngle += neptuneIncrementAngle * speedCoefficient;
 
         Sleep(10);
+
+        /* DRAW SKYBOX */
+        glDepthFunc(GL_LEQUAL);
+        SkyboxShader.activate();
+        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        glUniformMatrix4fv(glGetUniformLocation(SkyboxShader.get(), "view"), 1, GL_FALSE,
+                           &view[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(SkyboxShader.get(), "projection"), 1, GL_FALSE,
+                           &projection[0][0]);
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS);
+        /* DRAW SKYBOX */
+
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
@@ -316,4 +416,39 @@ void mouse_callback(GLFWwindow *window, double xposd, double yposd) {
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
