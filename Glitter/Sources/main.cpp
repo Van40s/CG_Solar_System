@@ -91,6 +91,13 @@ int main(int argc, char * argv[]) {
     SkyboxShader.attach("skybox.frag");
     SkyboxShader.link().activate();
 
+    Mirage::Shader lightSource;
+
+    lightSource.attach("shader.vert");
+    lightSource.attach("light_source.frag");
+    lightSource.link().activate();
+
+
     Model Sun (PROJECT_SOURCE_DIR "/Glitter/Models/sun/sun.obj");
     Model Mercury (PROJECT_SOURCE_DIR "/Glitter/Models/Mercury/mercury.obj");
     Model venus(PROJECT_SOURCE_DIR "/Glitter/Models/Venus/venus.obj");
@@ -158,14 +165,14 @@ int main(int argc, char * argv[]) {
     /* SKYBOX GENERATION */
 
     std::vector<std::string> faces
-    {
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_bk.tga",
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_dn.tga",
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_ft.tga",
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_lf.tga",
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_rt.tga",
-        PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_up.tga"
-    };
+            {
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_bk.tga",
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_dn.tga",
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_ft.tga",
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_lf.tga",
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_rt.tga",
+                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_up.tga"
+            };
 
     unsigned int cubemapTexture = loadCubemap(faces);
 
@@ -204,11 +211,11 @@ int main(int argc, char * argv[]) {
     float uranusAngle = 0.0f;
     float uranusIncrementAngle = 360.0f/30688.0f;
 
-    float neptuneAngle = 0.0f;
+    float neptuneAngle = 0.00f;
     float neptuneIncrementAngle = 360.0f/60190.0f;
 
     float speedCoefficient  = 0.001f;
-    
+
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
         // per-frame time logic
@@ -220,6 +227,7 @@ int main(int argc, char * argv[]) {
         processInput(mWindow);
 
         glm::mat4 view;
+        glm::mat4 model;
 
         // Background Fill Color
         glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
@@ -227,6 +235,16 @@ int main(int argc, char * argv[]) {
 
         // activate shader
         shaderProgram.activate();
+
+        // Set the light source position (Sun position)
+        glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 0.0f); // Replace with actual Sun position
+        glUniform3fv(glGetUniformLocation(shaderProgram.get(), "lightPos"), 1, &lightPos[0]);
+
+        // Set the camera (viewer) position
+        glm::vec3 viewPos = camera.Position; // Replace with actual camera position
+        glUniform3fv(glGetUniformLocation(shaderProgram.get(), "viewPos"), 1, &viewPos[0]);
+
+
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
@@ -246,15 +264,6 @@ int main(int argc, char * argv[]) {
         float saturnRotationAngle = glm::radians(currentFrame * 284.72f * rotationSpeedScale);
         float uranusRotationAngle = glm::radians(currentFrame * 196.39f * rotationSpeedScale);
         float neptuneRotationAngle = glm::radians(currentFrame * 242.78f * rotationSpeedScale);
-
-        // Position the Sun
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.f));
-        model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(23.5f) * 0.25f, glm::vec3(0.0f, 0.0f, 1.f));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
-        Sun.Draw(shaderProgram);
 
         //Mercury
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
@@ -332,6 +341,20 @@ int main(int argc, char * argv[]) {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Neptune.Draw(shaderProgram);
         neptuneAngle += neptuneIncrementAngle * speedCoefficient;
+
+        lightSource.activate();
+        // Position the Sun
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.f));
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(23.5f) * 0.25f, glm::vec3(0.0f, 0.0f, 1.f));
+        glUniformMatrix4fv(glGetUniformLocation(lightSource.get(), "model"), 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(lightSource.get(), "projection"), 1, GL_FALSE,
+                           &projection[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(lightSource.get(), "view"), 1, GL_FALSE,
+                           &view[0][0]);
+        Sun.Draw(lightSource);
 
         Sleep(10);
 
