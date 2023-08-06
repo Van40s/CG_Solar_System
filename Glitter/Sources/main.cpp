@@ -74,25 +74,17 @@ int main(int argc, char * argv[]) {
     glEnable(GL_DEPTH_TEST);
 
     Mirage::Shader shaderProgram;
-    // Build and compile shader program
-    // Vertex shader
     shaderProgram.attach("shader.vert");
-
-    // Fragment shader
     shaderProgram.attach("shader.frag");
-
-    // Link and activate the shader program
     shaderProgram.link().activate();
 
 
     Mirage::Shader SkyboxShader;
-
     SkyboxShader.attach("skybox.vert");
     SkyboxShader.attach("skybox.frag");
     SkyboxShader.link().activate();
 
     Mirage::Shader lightSource;
-
     lightSource.attach("shader.vert");
     lightSource.attach("light_source.frag");
     lightSource.link().activate();
@@ -107,6 +99,7 @@ int main(int argc, char * argv[]) {
     Model Saturn (PROJECT_SOURCE_DIR "/Glitter/Models/Saturn/scene.gltf");
     Model Uranus (PROJECT_SOURCE_DIR "/Glitter/Models/Uranus/uranus.obj");
     Model Neptune (PROJECT_SOURCE_DIR "/Glitter/Models/Neptune/neptune.obj");
+    Model Moon (PROJECT_SOURCE_DIR "/Glitter/Models/Moon/moon.obj");
 
     float skyboxVertices[] = {
             // positions
@@ -181,6 +174,7 @@ int main(int argc, char * argv[]) {
     long distanceSunToMercury = 57910000L; // Mercury's distance from the Sun in kilometers
     long distanceSunToVenus = 108200000L;  // Venus's distance from the Sun in kilometers
     long distanceSunToEarth = 149600000L;  // Earth's distance from the Sun in kilometers
+    long distanceSunToMoon = 149984400L;   // Moon's distance from the Sun in Kilometers
     long distanceSunToMars = 227940000L;   // Mars's distance from the Sun in kilometers
     long distanceSunToJupiter = 778330000L;// Jupiter's distance from the Sun in kilometers
     long distanceSunToSaturn = 1429400000L; // Saturn's distance from the Sun in kilometers
@@ -211,10 +205,17 @@ int main(int argc, char * argv[]) {
     float uranusAngle = 0.0f;
     float uranusIncrementAngle = 360.0f/30688.0f;
 
-    float neptuneAngle = 0.00f;
+    float neptuneAngle = 0.0f;
     float neptuneIncrementAngle = 360.0f/60190.0f;
 
     float speedCoefficient  = 0.001f;
+
+
+    //moon rotating around the earth
+    long distanceEarthToMoon = 384400L; // Moon's distance from Earth in kilometers
+
+    float moonAngle = 0.0f;
+    float moonIncrementAngle = 360.0f/27.3f;
 
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
@@ -264,20 +265,21 @@ int main(int argc, char * argv[]) {
         float saturnRotationAngle = glm::radians(currentFrame * 284.72f * rotationSpeedScale);
         float uranusRotationAngle = glm::radians(currentFrame * 196.39f * rotationSpeedScale);
         float neptuneRotationAngle = glm::radians(currentFrame * 242.78f * rotationSpeedScale);
+        float moonRotationAngle = glm::radians(currentFrame * 0.2292f * rotationSpeedScale);
+
 
         //Mercury
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToMercury * scalingCoef) + addedValue) * cos(mercuryAngle), 0.0f, (((float)distanceSunToMercury * scalingCoef) + addedValue) * sin(mercuryAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToMercury * scalingCoef) + addedValue) * cos(mercuryAngle), 0.0f, -(((float)distanceSunToMercury * scalingCoef) + addedValue) * sin(mercuryAngle)));
         model = glm::rotate(model, mercuryRotationAngle, glm::vec3(0.0f, 0.1f, 1.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Mercury.Draw(shaderProgram);
-
         mercuryAngle += mercuryIncrementAngle * speedCoefficient;
 
         // Venus
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToVenus * scalingCoef) + addedValue) * cos(venusAngle), 0.0f, (((float)distanceSunToVenus * scalingCoef) + addedValue) * sin(venusAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToVenus * scalingCoef) + addedValue) * cos(venusAngle), 0.0f, -(((float)distanceSunToVenus * scalingCoef) + addedValue) * sin(venusAngle)));
         model = glm::rotate(model, venusRotationAngle, glm::vec3(0.0f, -0.1f, 1.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
@@ -286,7 +288,7 @@ int main(int argc, char * argv[]) {
 
         // Earth
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle), 0.0f, (((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle), 0.0f, -(((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)));
         model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, earthRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
@@ -294,9 +296,24 @@ int main(int argc, char * argv[]) {
         Earth.Draw(shaderProgram);
         earthAngle+=earthIncrementAngle * speedCoefficient;
 
+        // Moon
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               glm::vec3(((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle))
+                               + ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * cos(moonAngle)),
+                               0.0f,
+                               (-((((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)))
+                               - ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * sin(moonAngle))));
+        model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, moonRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE,&model[0][0]);
+        Moon.Draw(shaderProgram);
+        moonAngle += moonIncrementAngle * speedCoefficient;
+
         //Mars
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToMars * scalingCoef) + addedValue) * cos(marsAngle), 0.0f, (((float)distanceSunToMars * scalingCoef) + addedValue) * sin(marsAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToMars * scalingCoef) + addedValue) * cos(marsAngle), 0.0f, -(((float)distanceSunToMars * scalingCoef) + addedValue) * sin(marsAngle)));
         model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, marsRotationAngle, glm::vec3(0.0f, 1.0f, 0.05f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
@@ -306,7 +323,7 @@ int main(int argc, char * argv[]) {
 
         //Jupiter
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToJupiter * scalingCoef) + addedValue) * cos(jupiterAngle), 0.0f, (((float)distanceSunToJupiter * scalingCoef) + addedValue) * sin(jupiterAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToJupiter * scalingCoef) + addedValue) * cos(jupiterAngle), 0.0f, -(((float)distanceSunToJupiter * scalingCoef) + addedValue) * sin(jupiterAngle)));
         model = glm::rotate(model, jupiterRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
@@ -315,7 +332,7 @@ int main(int argc, char * argv[]) {
 
         //Saturn
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToSaturn * scalingCoef) + addedValue) * cos(saturnAngle), 0.0f, (((float)distanceSunToSaturn * scalingCoef) + addedValue) * sin(saturnAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToSaturn * scalingCoef) + addedValue) * cos(saturnAngle), 0.0f, -(((float)distanceSunToSaturn * scalingCoef) + addedValue) * sin(saturnAngle)));
         model = glm::rotate(model, glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.2f, 1.2f, 1.2f));       // scale as needed
@@ -325,7 +342,7 @@ int main(int argc, char * argv[]) {
 
         //Uranus
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToUranus * scalingCoef) + addedValue) * cos(uranusAngle), 0.0f, (((float)distanceSunToUranus * scalingCoef) + addedValue) * sin(uranusAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToUranus * scalingCoef) + addedValue) * cos(uranusAngle), 0.0f, -(((float)distanceSunToUranus * scalingCoef) + addedValue) * sin(uranusAngle)));
         model = glm::rotate(model, uranusRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
@@ -334,7 +351,7 @@ int main(int argc, char * argv[]) {
 
         //Neptune
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
-        model = glm::translate(model, glm::vec3((((float)distanceSunToNeptune * scalingCoef) + addedValue) * cos(neptuneAngle), 0.0f, (((float)distanceSunToNeptune * scalingCoef) + addedValue) * sin(neptuneAngle)));
+        model = glm::translate(model, glm::vec3((((float)distanceSunToNeptune * scalingCoef) + addedValue) * cos(neptuneAngle), 0.0f, -(((float)distanceSunToNeptune * scalingCoef) + addedValue) * sin(neptuneAngle)));
         model = glm::rotate(model, glm::radians(20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, neptuneRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));       // scale as needed
