@@ -18,12 +18,7 @@ void main()
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * texture(texture_diffuse1, TexCoords).rgb; // You can adjust the diffuse intensity here
 
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2.0); // You can adjust the specular intensity and shininess here
-    vec3 specular = vec3(0.5) * spec;
-
-    vec3 lighting = ambient + diffuse + specular;
+    vec3 lighting = ambient + diffuse;
 
     FragColor = vec4(lighting, 1.0);
 }

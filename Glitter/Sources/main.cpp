@@ -89,6 +89,10 @@ int main(int argc, char * argv[]) {
     lightSource.attach("light_source.frag");
     lightSource.link().activate();
 
+    Mirage::Shader planetTracks;
+    planetTracks.attach("tracks.vert");
+    planetTracks.attach("tracks.frag");
+    planetTracks.link().activate();
 
     Model Sun (PROJECT_SOURCE_DIR "/Glitter/Models/sun/sun.obj");
     Model Mercury (PROJECT_SOURCE_DIR "/Glitter/Models/Mercury/mercury.obj");
@@ -217,6 +221,52 @@ int main(int argc, char * argv[]) {
     float moonAngle = 0.0f;
     float moonIncrementAngle = 360.0f/27.3f;
 
+
+    //==================================================== planets tracks =================
+    float distances[9];
+    distances[0] = ((float)distanceSunToMercury * scalingCoef) + addedValue;
+    distances[1] = ((float)distanceSunToVenus * scalingCoef) + addedValue;
+    distances[2] = ((float)distanceSunToEarth * scalingCoef) + addedValue;
+    distances[3] = ((float)distanceSunToMars * scalingCoef) + addedValue;
+    distances[4] = ((float)distanceSunToJupiter * scalingCoef) + addedValue;
+    distances[5] = ((float)distanceSunToSaturn * scalingCoef) + addedValue;
+    distances[6] = ((float)distanceSunToUranus * scalingCoef) + addedValue;
+    distances[7] = ((float)distanceSunToNeptune * scalingCoef) + addedValue;
+    std::cout<<distances[0]<<std::endl;
+    std::vector<float> vertices;
+    float x, y = 0.0f, z;
+    int numAngles = 180;
+    float angle = 0.0f;
+    float increment = 2 * 3.1415926 / numAngles;
+    for(int j=0; j<8; j++) {
+        for (int i = 0; i < numAngles; i++) {
+            x = distances[j] * cos(angle);
+            z = distances[j] * sin(angle);
+
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
+
+            angle += increment;
+        }
+        angle = 0.0f;
+    }
+
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), static_cast<void *>(nullptr));
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glLineWidth(20);
+
     // Rendering Loop
     while (glfwWindowShouldClose(mWindow) == false) {
         // per-frame time logic
@@ -333,8 +383,8 @@ int main(int argc, char * argv[]) {
         //Saturn
         model = glm::mat4(1.0f); // Reset the model matrix for Venus
         model = glm::translate(model, glm::vec3((((float)distanceSunToSaturn * scalingCoef) + addedValue) * cos(saturnAngle), 0.0f, -(((float)distanceSunToSaturn * scalingCoef) + addedValue) * sin(saturnAngle)));
-        model = glm::rotate(model, glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(35.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, saturnRotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(1.2f, 1.2f, 1.2f));       // scale as needed
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram.get(), "model"), 1, GL_FALSE, &model[0][0]);
         Saturn.Draw(shaderProgram);
@@ -392,6 +442,27 @@ int main(int argc, char * argv[]) {
         glDepthFunc(GL_LESS);
         /* DRAW SKYBOX */
 
+        planetTracks.activate();
+
+        model = glm::mat4(1.0f);
+        view = camera.GetViewMatrix();
+        glUniformMatrix4fv(glGetUniformLocation(planetTracks.get(), "model"), 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(planetTracks.get(), "projection"), 1, GL_FALSE,
+                           &projection[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(planetTracks.get(), "view"), 1, GL_FALSE,
+                           &view[0][0]);
+
+        int vertexColorLocation = glGetUniformLocation(planetTracks.get(), "uColor");
+        glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_LINE_LOOP, 0, numAngles);
+        glDrawArrays(GL_LINE_LOOP, numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 2 * numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 3 * numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 4 * numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 5 * numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 6 * numAngles, numAngles);
+        glDrawArrays(GL_LINE_LOOP, 7 * numAngles, numAngles);
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
