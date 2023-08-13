@@ -105,6 +105,7 @@ int main(int argc, char * argv[]) {
     Model Neptune (PROJECT_SOURCE_DIR "/Glitter/Models/Neptune/neptune.obj");
     Model Moon (PROJECT_SOURCE_DIR "/Glitter/Models/Moon/moon.obj");
 
+
     float skyboxVertices[] = {
             // positions
             -1.0f,  1.0f, -1.0f,
@@ -350,10 +351,10 @@ int main(int argc, char * argv[]) {
         model = glm::mat4(1.0f);
         model = glm::translate(model,
                                glm::vec3(((((float)distanceSunToEarth * scalingCoef) + addedValue) * cos(earthAngle))
-                               + ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * cos(moonAngle)),
-                               0.0f,
-                               (-((((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)))
-                               - ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * sin(moonAngle))));
+                                         + ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * cos(moonAngle)),
+                                         0.0f,
+                                         (-((((float)distanceSunToEarth * scalingCoef) + addedValue) * sin(earthAngle)))
+                                         - ((((float)distanceEarthToMoon * scalingCoef) + 5.0f) * sin(moonAngle))));
         model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::rotate(model, moonRotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));

@@ -26,7 +26,7 @@ namespace Mirage
         std::string path = PROJECT_SOURCE_DIR "/Glitter/Shaders/";
         std::ifstream fd(path + filename);
         auto src = std::string(std::istreambuf_iterator<char>(fd),
-                              (std::istreambuf_iterator<char>()));
+                               (std::istreambuf_iterator<char>()));
 
         // Create a Shader Object
         const char * source = src.c_str();
@@ -56,7 +56,7 @@ namespace Mirage
     {
         auto index = filename.rfind(".");
         auto ext = filename.substr(index + 1);
-             if (ext == "comp") return glCreateShader(GL_COMPUTE_SHADER);
+        if (ext == "comp") return glCreateShader(GL_COMPUTE_SHADER);
         else if (ext == "frag") return glCreateShader(GL_FRAGMENT_SHADER);
         else if (ext == "geom") return glCreateShader(GL_GEOMETRY_SHADER);
         else if (ext == "vert") return glCreateShader(GL_VERTEX_SHADER);

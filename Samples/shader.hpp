@@ -16,7 +16,7 @@ namespace Mirage
     public:
 
         // Implement Custom Constructor and Destructor
-         Shader() { mProgram = glCreateProgram(); }
+        Shader() { mProgram = glCreateProgram(); }
         ~Shader() { glDeleteProgram(mProgram); }
 
         // Public Member Functions
