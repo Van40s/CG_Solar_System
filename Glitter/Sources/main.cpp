@@ -94,17 +94,16 @@ int main(int argc, char * argv[]) {
     planetTracks.attach("tracks.frag");
     planetTracks.link().activate();
 
-    Model Sun (PROJECT_SOURCE_DIR "/Glitter/Models/sun/sun.obj");
-    Model Mercury (PROJECT_SOURCE_DIR "/Glitter/Models/Mercury/mercury.obj");
-    Model venus(PROJECT_SOURCE_DIR "/Glitter/Models/Venus/venus.obj");
-    Model Earth(PROJECT_SOURCE_DIR "/Glitter/Models/Earth/earth.obj");
-    Model Mars (PROJECT_SOURCE_DIR "/Glitter/Models/Mars/mars.obj");
-    Model Jupiter (PROJECT_SOURCE_DIR "/Glitter/Models/Jupiter/jupiter.obj");
-    Model Saturn (PROJECT_SOURCE_DIR "/Glitter/Models/Saturn/scene.gltf");
-    Model Uranus (PROJECT_SOURCE_DIR "/Glitter/Models/Uranus/uranus.obj");
-    Model Neptune (PROJECT_SOURCE_DIR "/Glitter/Models/Neptune/neptune.obj");
-    Model Moon (PROJECT_SOURCE_DIR "/Glitter/Models/Moon/moon.obj");
-
+    Model Sun ( "Models/sun/sun.obj");
+    Model Mercury ( "Models/Mercury/mercury.obj");
+    Model venus( "Models/Venus/venus.obj");
+    Model Earth( "Models/Earth/earth.obj");
+    Model Mars ( "Models/Mars/mars.obj");
+    Model Jupiter ( "Models/Jupiter/jupiter.obj");
+    Model Saturn ( "Models/Saturn/scene.gltf");
+    Model Uranus ( "Models/Uranus/uranus.obj");
+    Model Neptune ( "Models/Neptune/neptune.obj");
+    Model Moon ( "Models/Moon/moon.obj");
 
     float skyboxVertices[] = {
             // positions
@@ -164,12 +163,12 @@ int main(int argc, char * argv[]) {
 
     std::vector<std::string> faces
             {
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_bk.tga",
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_dn.tga",
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_ft.tga",
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_lf.tga",
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_rt.tga",
-                    PROJECT_SOURCE_DIR "/Glitter/Skybox/starfield_up.tga"
+                     "Skybox/starfield_bk.tga",
+                     "Skybox/starfield_dn.tga",
+                     "Skybox/starfield_ft.tga",
+                     "Skybox/starfield_lf.tga",
+                     "Skybox/starfield_rt.tga",
+                     "Skybox/starfield_up.tga"
             };
 
     unsigned int cubemapTexture = loadCubemap(faces);
