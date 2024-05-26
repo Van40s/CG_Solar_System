@@ -7,3 +7,5 @@
 ```bash
 git clone --recursive https://github.com/Van40s/CG_Solar_System
 ```
+
+[![YouTube](http://i.ytimg.com/vi/_B9ngF8cUC8/hqdefault.jpg)](https://www.youtube.com/watch?v=_B9ngF8cUC8)
